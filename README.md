@@ -1,40 +1,79 @@
-# asterisk-docker
-Servidor PABX em Asterisk com suporte para gravação de chamadas
+asterisk-docker
 
+Servidor PABX em Asterisk com suporte para gravação de chamadas.
 
-Acesso ao container pelo exec.sh
+Acesso ao container
 
-Para debug instalar o sngrep no container:
+Para acessar o container, utilize o script exec.sh:
+
+./exec.sh
+
+Debug com sngrep
+
+Para realizar debug e monitoramento de SIP, instale o sngrep dentro do container:
+
 apk add sngrep
 
-Configurar tronco em /config/sip.conf
-ramal para teste:
+Configuração do Tronco SIP
+
+Edite o arquivo de configuração localizado em /config/sip.conf.
+
+Ramal de Teste
+
 user: 1001
-password:1001
-domain:IP_CONTAINER
+password: 1001
+domain: IP_CONTAINER
 
-Configuração básica para chamadas saintes direcionadas para o Sip Trunk configurado em extensions.ael
+Configuração de Chamadas
 
-Range RTP utilizado: 10000-10099
+As chamadas de saída são direcionadas para o SIP Trunk configurado no arquivo extensions.ael.
 
-LINUX:
+Faixa de Portas RTP
+
+A faixa de portas RTP utilizada é: 10000-10099
+
+Configurações no Host (Linux)
+
+Habilitar o encaminhamento de pacotes (IP Forwarding)
+
 echo 1 > /proc/sys/net/ipv4/ip_forward
-/etc/sysctl.conf >> net.ipv4.ip_forward = 1
+
+Para tornar a configuração persistente, adicione a seguinte linha em /etc/sysctl.conf:
+
+net.ipv4.ip_forward = 1
+
+Recarregue as configurações:
+
 sysctl -p
 
 Regras de NAT no Host
-sudo iptables -t nat -A POSTROUTING -s IP_CONTAINER -o ens33 -j SNAT --to-source IP_HOST
--t nat: Especifica que estamos configurando regras de NAT.
--A POSTROUTING: Adiciona a regra à cadeia POSTROUTING, que lida com pacotes após o roteamento.
--s IP_CONTAINER: Especifica o IP de origem do contêiner.
--o ens33: Especifica a interface de saída do host (no seu caso, é ens33, a interface com IP IP_HOST).
--j SNAT: Faz a tradução de endereço de origem.
---to-source IP_HOST: Define o IP de origem para o IP do host.
 
-garantir que o tráfego de entrada do host também seja tratado
+Configurar saída do container para a rede externa
+
+sudo iptables -t nat -A POSTROUTING -s IP_CONTAINER -o ens33 -j SNAT --to-source IP_HOST
+
+Descrição dos parâmetros:
+
+-t nat: Especifica que estamos configurando regras de NAT.
+
+-A POSTROUTING: Adiciona a regra à cadeia POSTROUTING (pacotes após o roteamento).
+
+-s IP_CONTAINER: Define o IP de origem como o IP do container.
+
+-o ens33: Define a interface de saída (ex.: ens33).
+
+-j SNAT: Realiza a tradução do endereço de origem.
+
+--to-source IP_HOST: Define o IP do host como origem.
+
+Garantir que o tráfego de entrada também seja tratado
+
 sudo iptables -t nat -A POSTROUTING -s IP_CONTAINER -o ens33 -j MASQUERADE
 
+NAT para Áudio (RTP)
 
-NAT PARA AUDIO:
+Para garantir a transmissão de áudio, adicione as seguintes regras:
+
 iptables -t nat -A PREROUTING -p udp --dport 10000:10099 -j DNAT --to-destination IP_CONTAINER
 iptables -A FORWARD -p udp -d IP_CONTAINER --dport 10000:10099 -j ACCEPT
+
