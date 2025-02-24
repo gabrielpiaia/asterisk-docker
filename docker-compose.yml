@@ -1,0 +1,22 @@
+version: '3.7'
+
+services:
+  asterisk:
+    build: .  # Diretório atual onde o Dockerfile está localizado
+    container_name: asterisk-container
+    restart: always
+#    network_mode: host
+    ports:
+      - "5060:5060/tcp"
+      - "5060:5060/udp"
+      - "10000-10099:10000-10099/udp"
+    volumes:
+      - ./rec:/var/spool/asterisk/monitor  # Mapeia o diretório local 'audios' para os arquivos de áudio do Asterisk
+      - ./config/sip.conf:/etc/asterisk/sip.conf   # Mapeia o arquivo 'sip.conf' para o contêiner
+      - ./config/extensions.ael:/etc/asterisk/extensions.ael  # Mapeia o arquivo 'extensions.ael' para o contêiner
+      - ./config/rtp.conf:/etc/asterisk/rtp.conf  # Mapeia o arquivo 'extensions.ael' para o contêiner
+      - ./config/modules.conf:/etc/asterisk/modules.conf  # Mapeia o arquivo 'extensions.ael' para o contêiner
+
+    environment:
+      - ASTERISK_UID=1000
+      - ASTERISK_GID=1001

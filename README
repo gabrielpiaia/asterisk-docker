@@ -1,0 +1,35 @@
+docker exec -it asterisk-container /bin/sh
+apk add sngrep
+
+configurar ip em sip.conf
+
+module load chan_sip.so
+sip reload
+
+docker exec -it asterisk-container /bin/sh
+asterisk -r -x "module load chan_sip.so"
+
+
+LINUX:
+echo 1 > /proc/sys/net/ipv4/ip_forward
+/etc/sysctl.conf >> net.ipv4.ip_forward = 1
+sysctl -p
+
+Regras de NAT no Host
+sudo iptables -t nat -A POSTROUTING -s 172.18.0.2 -o ens33 -j SNAT --to-source 192.168.2.100
+-t nat: Especifica que estamos configurando regras de NAT.
+-A POSTROUTING: Adiciona a regra à cadeia POSTROUTING, que lida com pacotes após o roteamento.
+-s 172.18.0.2: Especifica o IP de origem do contêiner.
+-o ens33: Especifica a interface de saída do host (no seu caso, é ens33, a interface com IP 192.168.2.100).
+-j SNAT: Faz a tradução de endereço de origem.
+--to-source 192.168.2.100: Define o IP de origem para o IP do host.
+
+garantir que o tráfego de entrada do host também seja tratado
+sudo iptables -t nat -A POSTROUTING -s 172.18.0.2 -o ens33 -j MASQUERADE
+
+
+NAT PARA AUDIO:
+iptables -t nat -A PREROUTING -p udp --dport 10000:40000 -j DNAT --to-destination 172.18.0.2
+iptables -A FORWARD -p udp -d 172.18.0.2 --dport 10000:40000 -j ACCEPT
+
+
