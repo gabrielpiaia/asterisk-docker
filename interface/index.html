@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status dos Ramais Asterisk</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .status {
+            font-weight: bold;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>Status dos Ramais</h1>
+    <ul id="user-list"></ul>
+    
+    <script>
+        const socket = new WebSocket('ws://localhost:8080'); // Substitua pelo IP do seu servidor
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const userList = document.getElementById("user-list");
+            
+            // Buscar ramais do banco de dados
+            try {
+                const response = await fetch("/api/users");
+                const users = await response.json();
+                users.forEach(user => {
+                    const userItem = document.createElement("li");
+                    userItem.id = `user-${user.extension}`;
+                    userItem.innerHTML = `<strong>${user.name}</strong> (${user.extension}) - <span class="status">Desconhecido</span>`;
+                    userList.appendChild(userItem);
+                });
+            } catch (error) {
+                console.error("Erro ao buscar usuários:", error);
+            }
+
+            // Recebendo atualizações por WebSocket
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                const userItem = document.getElementById(`user-${data.extension}`);
+                if (userItem) {
+                    userItem.querySelector(".status").textContent = data.status;
+                }
+            };
+        });
+    </script>
+</body>
+</html>
