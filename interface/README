@@ -1,1 +1,2 @@
-Interface web recebendo notificações por websocket para vizualizar astatus dos agents
+npm install ws asterisk-ami-client
+node server.js

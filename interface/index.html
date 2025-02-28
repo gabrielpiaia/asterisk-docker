@@ -18,10 +18,11 @@
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
         }
         .status {
             font-weight: bold;
-            color: green;
         }
     </style>
 </head>
@@ -30,34 +31,31 @@
     <ul id="user-list"></ul>
     
     <script>
-        const socket = new WebSocket('ws://localhost:8080'); // Substitua pelo IP do seu servidor
+        const socket = new WebSocket('ws://localhost:8080'); 
 
-        document.addEventListener("DOMContentLoaded", async () => {
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
             const userList = document.getElementById("user-list");
-            
-            // Buscar ramais do banco de dados
-            try {
-                const response = await fetch("/api/users");
-                const users = await response.json();
-                users.forEach(user => {
-                    const userItem = document.createElement("li");
-                    userItem.id = `user-${user.extension}`;
-                    userItem.innerHTML = `<strong>${user.name}</strong> (${user.extension}) - <span class="status">Desconhecido</span>`;
-                    userList.appendChild(userItem);
-                });
-            } catch (error) {
-                console.error("Erro ao buscar usuários:", error);
-            }
+            let userItem = document.getElementById(`user-${data.extension}`);
 
-            // Recebendo atualizações por WebSocket
-            socket.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                const userItem = document.getElementById(`user-${data.extension}`);
-                if (userItem) {
-                    userItem.querySelector(".status").textContent = data.status;
+            if (data.status === "Online") {
+                if (!userItem) {
+                    // Criar elemento se não existir
+                    userItem = document.createElement("li");
+                    userItem.id = `user-${data.extension}`;
+                    userItem.innerHTML = `<strong>Ramal ${data.extension}</strong> - <span class="status" style="color: green;">Online</span>`;
+                    userList.appendChild(userItem);
+                } else {
+                    // Apenas atualizar status se já existir
+                    const statusSpan = userItem.querySelector(".status");
+                    statusSpan.textContent = "Online";
+                    statusSpan.style.color = "green";
                 }
-            };
-        });
+            } else if (data.status === "Offline" && userItem) {
+                // Remover usuário da lista se ficar offline
+                userItem.remove();
+            }
+        };
     </script>
 </body>
 </html>
