@@ -47,7 +47,6 @@ Este repositório contém uma infraestrutura baseada em Docker para execução d
 ## ▶️ Como Rodar
 
 docker-compose up -d
-./exec.sh
 
 
 ## ⚙️ Configurações
