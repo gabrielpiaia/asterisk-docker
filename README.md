@@ -20,7 +20,7 @@ Este repositório contém uma infraestrutura baseada em Docker para execução d
 - **MySQL** *(em breve)*  
 - **sngrep** para debug SIP  
 - **Whisper / LLM** *(modelo IA local para transcrição/análise)*  
-
+como
 ---
 
 ## ✅ Funcionalidades Atuais
@@ -47,7 +47,6 @@ Este repositório contém uma infraestrutura baseada em Docker para execução d
 ## ▶️ Como Rodar
 
 docker-compose up -d
-./exec.sh
 
 
 ## ⚙️ Configurações
