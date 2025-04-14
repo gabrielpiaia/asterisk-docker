@@ -1,79 +1,94 @@
-asterisk-docker
+# 🚀 Asterisk Docker - Servidor PABX com Integração de IA
 
-Servidor PABX em Asterisk com suporte para gravação de chamadas.
+Este repositório contém uma infraestrutura baseada em Docker para execução de um servidor **Asterisk** com suporte a:
 
-Acesso ao container
+- 🎧 Gravação de chamadas  
+- 🌐 Tratamento de NAT e RTP  
+- 📞 Filas (queues) e URAs (Unidades de Resposta Audível)  
+- 🤖 Discador automático (em desenvolvimento)  
+- 📊 Monitoramento de ramais com **Node.js**  
+- 🗄️ Integração futura com **MySQL**  
+- 🧠 Integração com IA para transcrição e análise de chamadas  
 
-Para acessar o container, utilize o script exec.sh:
+---
 
+## 🧰 Tecnologias Utilizadas
+
+- **Asterisk 18.20.2** (imagem base: `andrius/asterisk:alpine`)  
+- **Docker Compose**  
+- **Node.js** (para WebSocket)  
+- **MySQL** *(em breve)*  
+- **sngrep** para debug SIP  
+- **Whisper / LLM** *(modelo IA local para transcrição/análise)*  
+
+---
+
+## ✅ Funcionalidades Atuais
+
+- Chamadas SIP com NAT e RTP  
+- Gravação automática de chamadas  
+- URAs em `extensions.ael`  
+- Filas em `queues.conf`  
+- Monitoramento AMI (`manager.conf`)  
+- Pronto para testes com softphones (ex: usuário 1001)  
+
+---
+
+## 📈 Próximos Passos
+
+- Atualizar versão do Asterisk  
+- Adicionar URA dinâmica via **MySQL**  
+- Enviar eventos via **WebSocket**  
+- Integrar discador automático  
+- Conectar com IA local para transcrição e análise de chamadas  
+
+---
+
+## ▶️ Como Rodar
+
+docker-compose up -d
 ./exec.sh
 
-Debug com sngrep
 
-Para realizar debug e monitoramento de SIP, instale o sngrep dentro do container:
+## ⚙️ Configurações
 
-apk add sngrep
+- **SIP:** `./config/sip.conf`
+- **URA:** `./config/extensions.ael`
+- **RTP:** portas `10000–10099` (`rtp.conf`)
+- **Áudios:** `./rec`
 
-Configuração do Tronco SIP
+---
 
-Edite o arquivo de configuração localizado em /config/sip.conf.
+## 📱 Ramal de Teste
 
-Ramal de Teste
+- **Usuário:** 1001
+- **Senha:** 1001
+- **Domain:** IP do container
 
-user: 1001
-password: 1001
-domain: IP_CONTAINER
+---
 
-Configuração de Chamadas
+## 🔁 NAT e IP Forward (Linux Host)
 
-As chamadas de saída são direcionadas para o SIP Trunk configurado no arquivo extensions.ael.
+### Habilitar IP forwarding:
 
-Faixa de Portas RTP
-
-A faixa de portas RTP utilizada é: 10000-10099
-
-Configurações no Host (Linux)
-
-Habilitar o encaminhamento de pacotes (IP Forwarding)
 
 echo 1 > /proc/sys/net/ipv4/ip_forward
+sysctl -w net.ipv4.ip_forward=1
 
-Para tornar a configuração persistente, adicione a seguinte linha em /etc/sysctl.conf:
 
-net.ipv4.ip_forward = 1
+### Configurar NAT e encaminhamento de pacotes:
 
-Recarregue as configurações:
 
-sysctl -p
+iptables -t nat -A POSTROUTING -s <IP_CONTAINER> -o ens33 -j SNAT --to-source <IP_HOST>
+iptables -t nat -A PREROUTING -p udp --dport 10000:10099 -j DNAT --to-destination <IP_CONTAINER>
+iptables -A FORWARD -p udp -d <IP_CONTAINER> --dport 10000:10099 -j ACCEPT
 
-Regras de NAT no Host
+---
 
-Configurar saída do container para a rede externa
+## 🤝 Integração com IA
 
-sudo iptables -t nat -A POSTROUTING -s IP_CONTAINER -o ens33 -j SNAT --to-source IP_HOST
+Este repositório se integra com outro projeto responsável por:
 
-Descrição dos parâmetros:
-
--t nat: Especifica que estamos configurando regras de NAT.
-
--A POSTROUTING: Adiciona a regra à cadeia POSTROUTING (pacotes após o roteamento).
-
--s IP_CONTAINER: Define o IP de origem como o IP do container.
-
--o ens33: Define a interface de saída (ex.: ens33).
-
--j SNAT: Realiza a tradução do endereço de origem.
-
---to-source IP_HOST: Define o IP do host como origem.
-
-Garantir que o tráfego de entrada também seja tratado
-
-sudo iptables -t nat -A POSTROUTING -s IP_CONTAINER -o ens33 -j MASQUERADE
-
-NAT para Áudio (RTP)
-
-Para garantir a transmissão de áudio, adicione as seguintes regras:
-
-iptables -t nat -A PREROUTING -p udp --dport 10000:10099 -j DNAT --to-destination IP_CONTAINER
-iptables -A FORWARD -p udp -d IP_CONTAINER --dport 10000:10099 -j ACCEPT
-
+- 🗣️ **Transcrição de chamadas via IA**
+- 🧠 **Futuramente:** análise de sentimentos e geração de resumo com modelo **LLM local**
+- 📴 **Execução offline:** integração direta com o pipeline de gravação do Asterisk
